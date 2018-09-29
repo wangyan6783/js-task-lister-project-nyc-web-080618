@@ -1,65 +1,52 @@
 document.addEventListener('DOMContentLoaded', () => {
-  let appContent = document.getElementById("app-content");
-  let taskForm = document.createElement("div");
-  appContent.appendChild(taskForm);
-  let lists = document.createElement("div");
-  lists.id = "lists";
-  appContent.appendChild(lists);
+  let appContent = document.querySelector("#app-content");
+  let taskForm = document.querySelector("#task-form");
+  let lists = document.querySelector("#lists");
 
-  let newListForm = document.getElementById("create-list-form");
-
-  newListForm.addEventListener("submit", (e) => {
+  document.addEventListener("submit", (e) => {
     e.preventDefault();
-    let newListTitle = document.getElementById("new-list-title").value;
-    if (allData[newListTitle]) {
-      alert("List titles must be unique");
-    } else {
-      let newList = new List(newListTitle);
-      let eachList = document.createElement("div");
-      eachList.innerHTML = newList.render();
-      eachList.id = newList.title;
-      let listButton = eachList.querySelector("h2 button");
-      listButton.addEventListener("click", () => {
-        delete allData[newListTitle];
-        eachList.remove();
-        if (Object.keys(allData).length === 0){
-          taskForm.innerHTML = "";
-        }
-      })
-      lists.appendChild(eachList);
-
-      let taskLister = new TaskLister();
-      taskForm.innerHTML = taskLister.render();
-
-      Object.keys(allData).forEach((listTitle) => {
-        let option = document.createElement("option");
-        option.value = listTitle;
-        option.innerHTML = listTitle;
-        let select = document.getElementById("parent-list");
-        select.appendChild(option);
-      })
+    if (e.target.id === "create-list-form") {
+      let newListTitle = document.getElementById("new-list-title").value;
+      if (allLists.some(list => list.title === newListTitle)) {
+        alert("List titles must be unique");
+      } else {
+        let newList = new List(newListTitle);
+        let newTaskForm = new TaskLister;
+        taskForm.innerHTML = newTaskForm.render();
+        lists.innerHTML += newList.render();
+      }
     }
 
-    let newTaskForm = document.getElementById("create-task-form");
-    newTaskForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      let taskListTitle = document.querySelector("#parent-list").value;
-      let taskDescription = document.querySelector("#new-task-description").value;
-      let taskPriority = document.querySelector("#new-task-priority").value;
-      if (allData[taskListTitle].some((task) => task.description === taskDescription)){
-        alert("Task descriptions must be unique")
+    if (e.target.id === "create-task-form") {
+      let listTitle = document.querySelector("#parent-list").value;
+      let newDescription = document.querySelector("#new-task-description").value;
+      let newPriority = document.querySelector("#new-task-priority").value;
+      let targetTasks = allTasks.filter(task => task.listTitle === listTitle);
+      if (targetTasks.some(task => task.description === newDescription)) {
+        alert("Description must be unique");
       } else {
-        let newTask = new Task(taskListTitle, taskDescription, taskPriority);
-        let eachTask = document.createElement("li");
-        eachTask.innerHTML = newTask.render();
-        let taskButton = eachTask.querySelector("button");
-        taskButton.addEventListener("click", () => {
-          eachTask.remove();
-          allData[taskListTitle] = allData[taskListTitle].filter((task) => task.description !== taskDescription);
-        });
-        let ulList = document.querySelector(`#${taskListTitle} ul`);
-        ulList.appendChild(eachTask);
+        let newTask = new Task(listTitle, newDescription, newPriority);
+        lists.innerHTML = allLists.map(list => list.render()).join("");
       }
-    })
+    }
+  })
+
+  document.addEventListener("click", (e) => {
+    if (e.target.className === "delete-task") {
+      let taskDescription = e.target.dataset.taskName;
+      let listTitle = e.target.dataset.listTitle;
+      allTasks = allTasks.filter(task => task.listTitle !== listTitle || task.description !== taskDescription);
+      lists.innerHTML = allLists.map(list => list.render()).join("");
+    }
+
+    if (e.target.className === "delete-list") {
+      let listTitle = e.target.dataset.title;
+      allLists = allLists.filter(list => list.title !== listTitle);
+      allTasks = allTasks.filter(task => task.listTitle !== listTitle);
+      lists.innerHTML = allLists.map(list => list.render()).join("");
+      if (allLists.length === 0) {
+        appContent.innerHTML = "";
+      }
+    }
   })
 });
